@@ -8,7 +8,18 @@ from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
 from shutil import which
-from typing import Any, ClassVar, Dict, Generic, List, Optional, Sequence, TextIO, TypeVar, Union
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    TextIO,
+    TypeVar,
+    Union,
+)
 
 from streamlink import StreamError
 from streamlink.stream.stream import Stream, StreamIO
@@ -105,7 +116,9 @@ class FFMPEGMuxer(StreamIO):
 
     @classmethod
     @lru_cache(maxsize=128)
-    def _resolve_command(cls, command: Optional[str] = None, validate: bool = True) -> Optional[str]:
+    def _resolve_command(
+        cls, command: Optional[str] = None, validate: bool = True
+    ) -> Optional[str]:
         if command:
             resolved = which(command)
         else:
@@ -117,10 +130,14 @@ class FFMPEGMuxer(StreamIO):
 
         if resolved and validate:
             log.trace(f"Querying FFmpeg version: {[resolved, '-version']}")  # type: ignore[attr-defined]
-            versionoutput = FFmpegVersionOutput([resolved, "-version"], timeout=cls.FFMPEG_VERSION_TIMEOUT)
+            versionoutput = FFmpegVersionOutput(
+                [resolved, "-version"], timeout=cls.FFMPEG_VERSION_TIMEOUT
+            )
             if not versionoutput.run():
                 log.error("Could not validate FFmpeg!")
-                log.error(f"Unexpected FFmpeg version output while running {[resolved, '-version']}")
+                log.error(
+                    f"Unexpected FFmpeg version output while running {[resolved, '-version']}"
+                )
                 resolved = None
             else:
                 cls.FFMPEG_VERSION = versionoutput.version
@@ -128,8 +145,12 @@ class FFMPEGMuxer(StreamIO):
                     log.debug(f" {line}" if i > 0 else line)
 
         if not resolved:
-            log.warning("No valid FFmpeg binary was found. See the --ffmpeg-ffmpeg option.")
-            log.warning("Muxing streams is unsupported! Only a subset of the available streams can be returned!")
+            log.warning(
+                "No valid FFmpeg binary was found. See the --ffmpeg-ffmpeg option."
+            )
+            log.warning(
+                "Muxing streams is unsupported! Only a subset of the available streams can be returned!"
+            )
 
         return resolved
 
@@ -168,21 +189,34 @@ class FFMPEGMuxer(StreamIO):
         self.streams = streams
 
         self.pipes = [NamedPipe() for _ in self.streams]
-        self.pipe_threads = [threading.Thread(target=self.copy_to_pipe, args=(stream, np))
-                             for stream, np in
-                             zip(self.streams, self.pipes)]
+        self.pipe_threads = [
+            threading.Thread(target=self.copy_to_pipe, args=(stream, np))
+            for stream, np in zip(self.streams, self.pipes)
+        ]
 
-        ofmt = session.options.get("ffmpeg-fout") or options.pop("format", self.DEFAULT_OUTPUT_FORMAT)
+        ofmt = session.options.get("ffmpeg-fout") or options.pop(
+            "format", self.DEFAULT_OUTPUT_FORMAT
+        )
         outpath = options.pop("outpath", "pipe:1")
-        videocodec = session.options.get("ffmpeg-video-transcode") or options.pop("vcodec", self.DEFAULT_VIDEO_CODEC)
-        audiocodec = session.options.get("ffmpeg-audio-transcode") or options.pop("acodec", self.DEFAULT_AUDIO_CODEC)
+        videocodec = session.options.get("ffmpeg-video-transcode") or options.pop(
+            "vcodec", self.DEFAULT_VIDEO_CODEC
+        )
+        audiocodec = session.options.get("ffmpeg-audio-transcode") or options.pop(
+            "acodec", self.DEFAULT_AUDIO_CODEC
+        )
         metadata = options.pop("metadata", {})
         maps = options.pop("maps", [])
         copyts = session.options.get("ffmpeg-copyts") or options.pop("copyts", False)
-        start_at_zero = session.options.get("ffmpeg-start-at-zero") or options.pop("start_at_zero", False)
+        start_at_zero = session.options.get("ffmpeg-start-at-zero") or options.pop(
+            "start_at_zero", False
+        )
+        dkey = session.options.get("ffmpeg-dkey") or options.pop("dkey", False)
 
         self._cmd = [self.command(session), "-nostats", "-y"]
         for np in self.pipes:
+            self._cmd.extend(["-thread_queue_size", "32768"])
+            if dkey:
+                self._cmd.extend(["-decryption_key", dkey])
             self._cmd.extend(["-i", str(np.path)])
 
         self._cmd.extend(["-c:v", videocodec])
@@ -205,7 +239,9 @@ class FFMPEGMuxer(StreamIO):
         log.debug("ffmpeg command: {0}".format(" ".join(self._cmd)))
 
         if session.options.get("ffmpeg-verbose-path"):
-            self.errorlog = Path(session.options.get("ffmpeg-verbose-path")).expanduser().open("w")
+            self.errorlog = (
+                Path(session.options.get("ffmpeg-verbose-path")).expanduser().open("w")
+            )
         elif session.options.get("ffmpeg-verbose"):
             self.errorlog = sys.stderr
         else:
@@ -215,7 +251,12 @@ class FFMPEGMuxer(StreamIO):
         for t in self.pipe_threads:
             t.daemon = True
             t.start()
-        self.process = subprocess.Popen(self._cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=self.errorlog)
+        self.process = subprocess.Popen(
+            self._cmd,
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=self.errorlog,
+        )
 
         return self
 
@@ -240,7 +281,9 @@ class FFMPEGMuxer(StreamIO):
                 for stream in self.streams
                 if hasattr(stream, "close") and callable(stream.close)
             ]
-            concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+            concurrent.futures.wait(
+                futures, return_when=concurrent.futures.ALL_COMPLETED
+            )
             log.debug("Closed all the substreams")
 
             # wait for substream copy-to-pipe threads to terminate and clean up the opened pipes
@@ -249,7 +292,9 @@ class FFMPEGMuxer(StreamIO):
                 executor.submit(thread.join, timeout=timeout)
                 for thread in self.pipe_threads
             ]
-            concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+            concurrent.futures.wait(
+                futures, return_when=concurrent.futures.ALL_COMPLETED
+            )
 
         if self.errorlog is not sys.stderr and self.errorlog is not subprocess.DEVNULL:
             with suppress(OSError):

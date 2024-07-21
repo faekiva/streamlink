@@ -8,7 +8,14 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from streamlink import __version__ as streamlink_version, logger
 from streamlink.session import Streamlink
-from streamlink.utils.args import boolean, comma_list, comma_list_filter, filesize, keyvalue, num
+from streamlink.utils.args import (
+    boolean,
+    comma_list,
+    comma_list_filter,
+    filesize,
+    keyvalue,
+    num,
+)
 from streamlink.utils.times import hours_minutes_seconds_float
 from streamlink_cli.constants import STREAM_PASSTHROUGH
 from streamlink_cli.output.player import PlayerOutput
@@ -17,10 +24,14 @@ from streamlink_cli.utils import find_default_player
 
 class ArgumentParser(argparse.ArgumentParser):
     # noinspection PyUnresolvedReferences,PyProtectedMember
-    NESTED_ARGUMENT_GROUPS: Dict[Optional[argparse._ArgumentGroup], List[argparse._ArgumentGroup]]
+    NESTED_ARGUMENT_GROUPS: Dict[
+        Optional[argparse._ArgumentGroup], List[argparse._ArgumentGroup]
+    ]
 
-    _RE_PRINTABLE = re.compile(fr"[{re.escape(printable)}]")
-    _RE_OPTION = re.compile(r"^(?P<name>[A-Za-z0-9-]+)(?:(?P<op>\s*=\s*|\s+)(?P<value>.*))?$")
+    _RE_PRINTABLE = re.compile(rf"[{re.escape(printable)}]")
+    _RE_OPTION = re.compile(
+        r"^(?P<name>[A-Za-z0-9-]+)(?:(?P<op>\s*=\s*|\s+)(?P<value>.*))?$"
+    )
 
     def __init__(self, *args, **kwargs):
         self.NESTED_ARGUMENT_GROUPS = {}
@@ -46,7 +57,7 @@ class ArgumentParser(argparse.ArgumentParser):
         match = self._RE_PRINTABLE.search(line)
         if not match:
             return
-        line = line[match.start():].strip()
+        line = line[match.start() :].strip()
 
         # Skip lines that do not start with a valid option (e.g. comments)
         option = self._RE_OPTION.match(line)
@@ -82,9 +93,12 @@ class ArgumentParser(argparse.ArgumentParser):
                 argparse.OPTIONAL: argparse._("expected at most one argument"),
                 argparse.ONE_OR_MORE: argparse._("expected at least one argument"),
             }
-            default = argparse.ngettext("expected %s argument",
-                                        "expected %s arguments",
-                                        action.nargs) % action.nargs
+            default = (
+                argparse.ngettext(
+                    "expected %s argument", "expected %s arguments", action.nargs
+                )
+                % action.nargs
+            )
             msg = nargs_errors.get(action.nargs, default)
             raise argparse.ArgumentError(action, msg)
 
@@ -96,8 +110,7 @@ class ArgumentParser(argparse.ArgumentParser):
         formatter = self._get_formatter()
 
         # usage
-        formatter.add_usage(self.usage, self._actions,
-                            self._mutually_exclusive_groups)
+        formatter.add_usage(self.usage, self._actions, self._mutually_exclusive_groups)
 
         # description
         formatter.add_text(self.description)
@@ -148,17 +161,21 @@ def build_parser():
         formatter_class=HelpFormatter,
         add_help=False,
         usage="%(prog)s [OPTIONS] <URL> [STREAM]",
-        description=dedent("""
+        description=dedent(
+            """
         Streamlink is a command-line utility that extracts streams from various
         services and pipes them into a video player of choice.
-        """),
-        epilog=dedent("""
+        """
+        ),
+        epilog=dedent(
+            """
         For more in-depth documentation see:
           https://streamlink.github.io
 
         Please report broken plugins or bugs to the issue tracker on Github:
           https://github.com/streamlink/streamlink/issues
-        """),
+        """
+        ),
     )
 
     positional = parser.add_argument_group("Positional arguments")
@@ -197,14 +214,16 @@ def build_parser():
 
     general = parser.add_argument_group("General options")
     general.add_argument(
-        "-h", "--help",
+        "-h",
+        "--help",
         action="store_true",
         help="""
         Show this help message and exit.
         """,
     )
     general.add_argument(
-        "-V", "--version",
+        "-V",
+        "--version",
         action="version",
         version=f"%(prog)s {streamlink_version}",
         help="""
@@ -276,7 +295,8 @@ def build_parser():
         """,
     )
     general.add_argument(
-        "-l", "--loglevel",
+        "-l",
+        "--loglevel",
         metavar="LEVEL",
         choices=logger.levels,
         default="info",
@@ -315,7 +335,8 @@ def build_parser():
         """,
     )
     general.add_argument(
-        "-Q", "--quiet",
+        "-Q",
+        "--quiet",
         action="store_true",
         help="""
         Hide all log output.
@@ -324,7 +345,8 @@ def build_parser():
         """,
     )
     general.add_argument(
-        "-j", "--json",
+        "-j",
+        "--json",
         action="store_true",
         help="""
         Output JSON representations instead of the normal text output.
@@ -373,7 +395,8 @@ def build_parser():
         """,
     )
     general.add_argument(
-        "-4", "--ipv4",
+        "-4",
+        "--ipv4",
         action="store_true",
         default=None,
         help="""
@@ -381,7 +404,8 @@ def build_parser():
         """,
     )
     general.add_argument(
-        "-6", "--ipv6",
+        "-6",
+        "--ipv6",
         action="store_true",
         default=None,
         help="""
@@ -391,7 +415,8 @@ def build_parser():
 
     player = parser.add_argument_group("Player options")
     player.add_argument(
-        "-p", "--player",
+        "-p",
+        "--player",
         metavar="PATH",
         type=Path,
         default=find_default_player(),
@@ -410,7 +435,8 @@ def build_parser():
         """,
     )
     player.add_argument(
-        "-a", "--player-args",
+        "-a",
+        "--player-args",
         metavar="ARGUMENTS",
         default="",
         help=f"""
@@ -450,14 +476,17 @@ def build_parser():
         """,
     )
     player.add_argument(
-        "-v", "--verbose-player",
+        "-v",
+        "--verbose-player",
         action="store_true",
         help="""
         Allow the player to display its console output.
         """,
     )
     player.add_argument(
-        "-n", "--player-fifo", "--fifo",
+        "-n",
+        "--player-fifo",
+        "--fifo",
         action="store_true",
         help="""
         Make the player read the stream through a named pipe instead of the
@@ -553,7 +582,9 @@ def build_parser():
         - {0}
 
         Make sure your player can handle the stream type when using this.
-        """.format("\n        - ".join(STREAM_PASSTHROUGH)),
+        """.format(
+            "\n        - ".join(STREAM_PASSTHROUGH)
+        ),
     )
     player.add_argument(
         "--player-no-close",
@@ -570,7 +601,8 @@ def build_parser():
         """,
     )
     player.add_argument(
-        "-t", "--title",
+        "-t",
+        "--title",
         metavar="TITLE",
         help=f"""
         Change the title of the video player's window.
@@ -598,7 +630,8 @@ def build_parser():
 
     output = parser.add_argument_group("File output options")
     output.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         metavar="FILENAME",
         help="""
         Write stream data to `FILENAME` instead of playing it. If `FILENAME` is set to `-` (dash), then the stream data will be
@@ -619,14 +652,16 @@ def build_parser():
         """,
     )
     output.add_argument(
-        "-O", "--stdout",
+        "-O",
+        "--stdout",
         action="store_true",
         help="""
         Write stream data to stdout instead of playing it.
         """,
     )
     output.add_argument(
-        "-r", "--record",
+        "-r",
+        "--record",
         metavar="FILENAME",
         help="""
         Open the stream in the player, while at the same time writing it to `FILENAME`. If `FILENAME` is set to `-` (dash),
@@ -647,7 +682,8 @@ def build_parser():
         """,
     )
     output.add_argument(
-        "-R", "--record-and-pipe",
+        "-R",
+        "--record-and-pipe",
         metavar="FILENAME",
         help="""
         Write stream data to stdout, while at the same time writing it to `FILENAME`.
@@ -686,7 +722,8 @@ def build_parser():
         """,
     )
     output.add_argument(
-        "-f", "--force",
+        "-f",
+        "--force",
         action="store_true",
         help="""
         When using --output or --record, always write to file even if it already exists (overwrite).
@@ -788,7 +825,8 @@ def build_parser():
         """,
     )
     stream.add_argument(
-        "--stream-types", "--stream-priority",
+        "--stream-types",
+        "--stream-priority",
         metavar="TYPES",
         type=comma_list,
         help="""
@@ -1180,6 +1218,15 @@ def build_parser():
         """,
     )
 
+    transport_ffmpeg.add_argument(
+        "--ffmpeg-dkey",
+        type=str,
+        metavar="DKEY",
+        help="""
+        Set the decryption key
+        """,
+    )
+
     http = parser.add_argument_group("HTTP options")
     http.add_argument(
         "--http-proxy",
@@ -1371,12 +1418,10 @@ def build_parser():
 _ARGUMENT_TO_SESSIONOPTION: List[Tuple[str, str, Optional[Callable[[Any], Any]]]] = [
     # generic arguments
     ("locale", "locale", None),
-
     # network arguments
     ("interface", "interface", None),
     ("ipv4", "ipv4", None),
     ("ipv6", "ipv6", None),
-
     # HTTP session arguments
     ("https_proxy", "https-proxy", None),
     ("http_proxy", "http-proxy", None),
@@ -1389,14 +1434,12 @@ _ARGUMENT_TO_SESSIONOPTION: List[Tuple[str, str, Optional[Callable[[Any], Any]]]
     ("http_ssl_cert", "http-ssl-cert", None),
     ("http_ssl_cert_crt_key", "http-ssl-cert", tuple),
     ("http_timeout", "http-timeout", None),
-
     # deprecated stream transport arguments (need to be defined first, so following ones can override values)
     ("hls_segment_attempts", "hls-segment-attempts", None),
     ("hls_segment_threads", "hls-segment-threads", None),
     ("hls_segment_timeout", "hls-segment-timeout", None),
     ("hls_timeout", "hls-timeout", None),
     ("http_stream_timeout", "http-stream-timeout", None),
-
     # stream transport arguments
     ("ringbuffer_size", "ringbuffer-size", None),
     ("mux_subtitles", "mux-subtitles", None),
@@ -1421,11 +1464,11 @@ _ARGUMENT_TO_SESSIONOPTION: List[Tuple[str, str, Optional[Callable[[Any], Any]]]
     ("ffmpeg_verbose", "ffmpeg-verbose", None),
     ("ffmpeg_verbose_path", "ffmpeg-verbose-path", None),
     ("ffmpeg_fout", "ffmpeg-fout", None),
+    ("ffmpeg_dkey", "ffmpeg-dkey", None),
     ("ffmpeg_video_transcode", "ffmpeg-video-transcode", None),
     ("ffmpeg_audio_transcode", "ffmpeg-audio-transcode", None),
     ("ffmpeg_copyts", "ffmpeg-copyts", None),
     ("ffmpeg_start_at_zero", "ffmpeg-start-at-zero", None),
-
     # web browser arguments
     ("webbrowser", "webbrowser", None),
     ("webbrowser_executable", "webbrowser-executable", None),

@@ -1,7 +1,16 @@
 import warnings
 from pathlib import Path
 from socket import AF_INET, AF_INET6
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterator, Mapping, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Iterator,
+    Mapping,
+    Tuple,
+)
 
 import urllib3.util.connection as urllib3_util_connection
 from requests.adapters import HTTPAdapter
@@ -28,7 +37,10 @@ def _get_deprecation_stacklevel_offset():
     frame = currentframe().f_back.f_back
     offset = 0
     while frame:
-        if frame.f_code.co_filename == _session_file and frame.f_code.co_name in ("set_option", "get_option"):
+        if frame.f_code.co_filename == _session_file and frame.f_code.co_name in (
+            "set_option",
+            "get_option",
+        ):
             offset += 1
             break
         frame = frame.f_back
@@ -301,53 +313,58 @@ class StreamlinkOptions(Options):
     """
 
     def __init__(self, session: "Streamlink") -> None:
-        super().__init__(defaults={
-            "user-input-requester": None,
-            "locale": None,
-            "interface": None,
-            "ipv4": False,
-            "ipv6": False,
-            "ringbuffer-size": 1024 * 1024 * 16,  # 16 MB
-            "mux-subtitles": False,
-            "stream-segment-attempts": 3,
-            "stream-segment-threads": 1,
-            "stream-segment-timeout": 10.0,
-            "stream-timeout": 60.0,
-            "hls-live-edge": 3,
-            "hls-live-restart": False,
-            "hls-start-offset": 0.0,
-            "hls-duration": None,
-            "hls-playlist-reload-attempts": 3,
-            "hls-playlist-reload-time": "default",
-            "hls-segment-queue-threshold": 3,
-            "hls-segment-stream-data": False,
-            "hls-segment-ignore-names": [],
-            "hls-segment-key-uri": None,
-            "hls-audio-select": [],
-            "dash-manifest-reload-attempts": 3,
-            "ffmpeg-ffmpeg": None,
-            "ffmpeg-no-validation": False,
-            "ffmpeg-verbose": False,
-            "ffmpeg-verbose-path": None,
-            "ffmpeg-fout": None,
-            "ffmpeg-video-transcode": None,
-            "ffmpeg-audio-transcode": None,
-            "ffmpeg-copyts": False,
-            "ffmpeg-start-at-zero": False,
-            "webbrowser": True,
-            "webbrowser-executable": None,
-            "webbrowser-timeout": 20.0,
-            "webbrowser-cdp-host": None,
-            "webbrowser-cdp-port": None,
-            "webbrowser-cdp-timeout": 2.0,
-            "webbrowser-headless": True,
-        })
+        super().__init__(
+            defaults={
+                "user-input-requester": None,
+                "locale": None,
+                "interface": None,
+                "ipv4": False,
+                "ipv6": False,
+                "ringbuffer-size": 1024 * 1024 * 16,  # 16 MB
+                "mux-subtitles": False,
+                "stream-segment-attempts": 3,
+                "stream-segment-threads": 1,
+                "stream-segment-timeout": 10.0,
+                "stream-timeout": 60.0,
+                "hls-live-edge": 3,
+                "hls-live-restart": False,
+                "hls-start-offset": 0.0,
+                "hls-duration": None,
+                "hls-playlist-reload-attempts": 3,
+                "hls-playlist-reload-time": "default",
+                "hls-segment-queue-threshold": 3,
+                "hls-segment-stream-data": False,
+                "hls-segment-ignore-names": [],
+                "hls-segment-key-uri": None,
+                "hls-audio-select": [],
+                "dash-manifest-reload-attempts": 3,
+                "ffmpeg-ffmpeg": None,
+                "ffmpeg-no-validation": False,
+                "ffmpeg-verbose": False,
+                "ffmpeg-verbose-path": None,
+                "ffmpeg-fout": None,
+                "ffmpeg-dkey": None,
+                "ffmpeg-video-transcode": None,
+                "ffmpeg-audio-transcode": None,
+                "ffmpeg-copyts": False,
+                "ffmpeg-start-at-zero": False,
+                "webbrowser": True,
+                "webbrowser-executable": None,
+                "webbrowser-timeout": 20.0,
+                "webbrowser-cdp-host": None,
+                "webbrowser-cdp-port": None,
+                "webbrowser-cdp-timeout": 2.0,
+                "webbrowser-headless": True,
+            }
+        )
         self.session = session
 
     # ---- utils
 
     @staticmethod
-    def _parse_key_equals_value_string(delimiter: str, value: str) -> Iterator[Tuple[str, str]]:
+    def _parse_key_equals_value_string(
+        delimiter: str, value: str
+    ) -> Iterator[Tuple[str, str]]:
         for keyval in value.split(delimiter):
             try:
                 key, val = keyval.split("=", 1)
@@ -368,7 +385,9 @@ class StreamlinkOptions(Options):
 
     def _get_http_proxy(self, key):
         self._deprecate_https_proxy(key)
-        return self.session.http.proxies.get("https" if key == "https-proxy" else "http")
+        return self.session.http.proxies.get(
+            "https" if key == "https-proxy" else "http"
+        )
 
     def _get_http_attr(self, key):
         return getattr(self.session.http, self._OPTIONS_HTTP_ATTRS[key])
@@ -392,15 +411,15 @@ class StreamlinkOptions(Options):
             urllib3_util_connection.allowed_gai_family = _original_allowed_gai_family  # type: ignore[attr-defined]
         elif key == "ipv4":
             self.set_explicit("ipv6", False)
-            urllib3_util_connection.allowed_gai_family = (lambda: AF_INET)  # type: ignore[attr-defined]
+            urllib3_util_connection.allowed_gai_family = lambda: AF_INET  # type: ignore[attr-defined]
         else:
             self.set_explicit("ipv4", False)
-            urllib3_util_connection.allowed_gai_family = (lambda: AF_INET6)  # type: ignore[attr-defined]
+            urllib3_util_connection.allowed_gai_family = lambda: AF_INET6  # type: ignore[attr-defined]
 
     def _set_http_proxy(self, key, value):
-        self.session.http.proxies["http"] \
-            = self.session.http.proxies["https"] \
-            = update_scheme("https://", value, force=False)
+        self.session.http.proxies["http"] = self.session.http.proxies["https"] = (
+            update_scheme("https://", value, force=False)
+        )
         self._deprecate_https_proxy(key)
 
     def _set_http_attr(self, key, value):
@@ -416,16 +435,24 @@ class StreamlinkOptions(Options):
         self.session.http.mount("https://", adapter)
 
     @staticmethod
-    def _factory_set_http_attr_key_equals_value(delimiter: str) -> Callable[["StreamlinkOptions", str, Any], None]:
+    def _factory_set_http_attr_key_equals_value(
+        delimiter: str,
+    ) -> Callable[["StreamlinkOptions", str, Any], None]:
         def inner(self: "StreamlinkOptions", key: str, value: Any) -> None:
             getattr(self.session.http, self._OPTIONS_HTTP_ATTRS[key]).update(
-                value if isinstance(value, dict) else dict(self._parse_key_equals_value_string(delimiter, value)),
+                (
+                    value
+                    if isinstance(value, dict)
+                    else dict(self._parse_key_equals_value_string(delimiter, value))
+                ),
             )
 
         return inner
 
     @staticmethod
-    def _factory_set_deprecated(name: str, mapper: Callable[[Any], Any]) -> Callable[["StreamlinkOptions", str, Any], None]:
+    def _factory_set_deprecated(
+        name: str, mapper: Callable[[Any], Any]
+    ) -> Callable[["StreamlinkOptions", str, Any], None]:
         def inner(self: "StreamlinkOptions", key: str, value: Any) -> None:
             self.set_explicit(name, mapper(value))
             warnings.warn(
@@ -437,7 +464,9 @@ class StreamlinkOptions(Options):
         return inner
 
     # TODO: py39 support end: remove explicit dummy context binding of static method
-    _factory_set_http_attr_key_equals_value = _factory_set_http_attr_key_equals_value.__get__(object)
+    _factory_set_http_attr_key_equals_value = (
+        _factory_set_http_attr_key_equals_value.__get__(object)
+    )
     _factory_set_deprecated = _factory_set_deprecated.__get__(object)
 
     # ----
@@ -464,7 +493,9 @@ class StreamlinkOptions(Options):
         "http-timeout": _get_http_attr,
     }
 
-    _MAP_SETTERS: ClassVar[Mapping[str, Callable[["StreamlinkOptions", str, Any], None]]] = {
+    _MAP_SETTERS: ClassVar[
+        Mapping[str, Callable[["StreamlinkOptions", str, Any], None]]
+    ] = {
         "interface": _set_interface,
         "ipv4": _set_ipv4_ipv6,
         "ipv6": _set_ipv4_ipv6,
@@ -478,11 +509,15 @@ class StreamlinkOptions(Options):
         "http-ssl-verify": _set_http_attr,
         "http-trust-env": _set_http_attr,
         "http-timeout": _set_http_attr,
-        "dash-segment-attempts": _factory_set_deprecated("stream-segment-attempts", int),
+        "dash-segment-attempts": _factory_set_deprecated(
+            "stream-segment-attempts", int
+        ),
         "hls-segment-attempts": _factory_set_deprecated("stream-segment-attempts", int),
         "dash-segment-threads": _factory_set_deprecated("stream-segment-threads", int),
         "hls-segment-threads": _factory_set_deprecated("stream-segment-threads", int),
-        "dash-segment-timeout": _factory_set_deprecated("stream-segment-timeout", float),
+        "dash-segment-timeout": _factory_set_deprecated(
+            "stream-segment-timeout", float
+        ),
         "hls-segment-timeout": _factory_set_deprecated("stream-segment-timeout", float),
         "dash-timeout": _factory_set_deprecated("stream-timeout", float),
         "hls-timeout": _factory_set_deprecated("stream-timeout", float),

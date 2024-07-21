@@ -15,7 +15,11 @@ from streamlink.session import Streamlink
 from streamlink.stream.dash.manifest import MPD, Representation, freeze_timeline
 from streamlink.stream.dash.segment import DASHSegment
 from streamlink.stream.ffmpegmux import FFMPEGMuxer
-from streamlink.stream.segmented import SegmentedStreamReader, SegmentedStreamWorker, SegmentedStreamWriter
+from streamlink.stream.segmented import (
+    SegmentedStreamReader,
+    SegmentedStreamWorker,
+    SegmentedStreamWriter,
+)
 from streamlink.stream.stream import Stream
 from streamlink.utils.l10n import Language
 from streamlink.utils.parse import parse_xml
@@ -36,11 +40,15 @@ class DASHStreamWriter(SegmentedStreamWriter[DASHSegment, Response]):
         name = segment.name
         available_in = segment.available_in
         if available_in > 0:
-            log.debug(f"{self.reader.mime_type} segment {name}: waiting {available_in:.01f}s ({segment.availability})")
+            log.debug(
+                f"{self.reader.mime_type} segment {name}: waiting {available_in:.01f}s ({segment.availability})"
+            )
             if not self.wait(available_in):
                 log.debug(f"{self.reader.mime_type} segment {name}: cancelled")
                 return
-        log.debug(f"{self.reader.mime_type} segment {name}: downloading ({segment.availability})")
+        log.debug(
+            f"{self.reader.mime_type} segment {name}: downloading ({segment.availability})"
+        )
 
         request_args = copy.deepcopy(self.reader.stream.args)
         headers = request_args.pop("headers", {})
@@ -81,7 +89,9 @@ class DASHStreamWorker(SegmentedStreamWorker[DASHSegment, Response]):
         super().__init__(*args, **kwargs)
         self.mpd = self.stream.mpd
 
-        self.manifest_reload_retries = self.session.options.get("dash-manifest-reload-attempts")
+        self.manifest_reload_retries = self.session.options.get(
+            "dash-manifest-reload-attempts"
+        )
 
     @contextmanager
     def sleeper(self, duration):
@@ -104,10 +114,17 @@ class DASHStreamWorker(SegmentedStreamWorker[DASHSegment, Response]):
             if self.mpd.type == "static":
                 refresh_wait = 5
             else:
-                refresh_wait = max(
-                    self.mpd.minimumUpdatePeriod.total_seconds(),
-                    representation.period.duration.total_seconds() if representation else 0,
-                ) or 5
+                refresh_wait = (
+                    max(
+                        self.mpd.minimumUpdatePeriod.total_seconds(),
+                        (
+                            representation.period.duration.total_seconds()
+                            if representation
+                            else 0
+                        ),
+                    )
+                    or 5
+                )
 
             with self.sleeper(refresh_wait * back_off_factor):
                 if not representation:
@@ -237,7 +254,9 @@ class DASHStream(Stream):
         return self.mpd.url
 
     @staticmethod
-    def fetch_manifest(session: Streamlink, url_or_manifest: str, **request_args) -> Tuple[str, Dict[str, Any]]:
+    def fetch_manifest(
+        session: Streamlink, url_or_manifest: str, **request_args
+    ) -> Tuple[str, Dict[str, Any]]:
         if url_or_manifest.startswith("<?xml"):
             return url_or_manifest, {}
 
@@ -293,11 +312,7 @@ class DASHStream(Stream):
 
         # Search for suitable video and audio representations
         for aset in mpd.periods[period].adaptationSets:
-            if aset.contentProtections:
-                raise PluginError(f"{source} is protected by DRM")
             for rep in aset.representations:
-                if rep.contentProtections:
-                    raise PluginError(f"{source} is protected by DRM")
                 if rep.mimeType.startswith("video"):
                     video.append(rep)
                 elif rep.mimeType.startswith("audio"):  # pragma: no branch
@@ -318,7 +333,11 @@ class DASHStream(Stream):
             if aud and aud.lang:
                 available_languages.add(aud.lang)
                 with suppress(LookupError):
-                    if locale.explicit and aud.lang and Language.get(aud.lang) == locale_lang:
+                    if (
+                        locale.explicit
+                        and aud.lang
+                        and Language.get(aud.lang) == locale_lang
+                    ):
                         lang = aud.lang
 
         if not lang:
@@ -342,7 +361,9 @@ class DASHStream(Stream):
             stream_name = []
 
             if vid:
-                stream_name.append(f"{vid.height or vid.bandwidth_rounded:0.0f}{'p' if vid.height else 'k'}")
+                stream_name.append(
+                    f"{vid.height or vid.bandwidth_rounded:0.0f}{'p' if vid.height else 'k'}"
+                )
             if aud and len(audio) > 1:
                 stream_name.append(f"a{aud.bandwidth:0.0f}k")
             ret.append(("+".join(stream_name), stream))
@@ -384,12 +405,16 @@ class DASHStream(Stream):
 
         if rep_video:
             video = DASHStreamReader(self, rep_video, timestamp)
-            log.debug(f"Opening DASH reader for: {rep_video.ident!r} - {rep_video.mimeType}")
+            log.debug(
+                f"Opening DASH reader for: {rep_video.ident!r} - {rep_video.mimeType}"
+            )
             video.open()
 
         if rep_audio:
             audio = DASHStreamReader(self, rep_audio, timestamp)
-            log.debug(f"Opening DASH reader for: {rep_audio.ident!r} - {rep_audio.mimeType}")
+            log.debug(
+                f"Opening DASH reader for: {rep_audio.ident!r} - {rep_audio.mimeType}"
+            )
             audio.open()
 
         if video and audio:
